@@ -22,8 +22,8 @@ This script can be executable under following environment.
 Note:<br>
 This is tested on Ubuntu 16 on WSL only.
 
-# How to use
-## ls-remote
+# How to use/Sub-commands
+## `ls-remote`
 Retrieving releases from GitHub.
 
 ```bash
@@ -41,7 +41,7 @@ If API rate limit exceeded, Setting `$DVMSH_GITHUBAPI_CREDENTIAL`  as following 
 $ DVMSH_GITHUBAPI_CREDENTIAL=<GITHUB_ACCOUNT> dvm ls-remote
 ```
 
-## install
+## `install`
 Installing specified version.
 
 ```bash
@@ -56,7 +56,7 @@ Please execute `dvm.sh use v1.0.2` for activating the version.
 Note:<br>
 This sub-command uses `ls-remote` sub-command in order to validate specified version string.
 
-## ls
+## `ls`
 Retriving installed version.
 
 ```bash
@@ -64,7 +64,7 @@ $ dvm.sh ls
 v1.0.2
 ```
 
-## use
+## `use`
 Activating specified version.
 
 ```bash
@@ -81,4 +81,11 @@ Deno `v1.0.1` is not found in your machine.
 Please retry after executing following command.
 
   `dvm.sh install v1.0.1`
+```
+
+## `uninstall`
+Uninstalling specified version from your computer.
+
+```bash
+$ dvm.sh uninstall v1.0.2
 ```
