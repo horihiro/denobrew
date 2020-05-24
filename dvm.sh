@@ -1,4 +1,6 @@
 #!/bin/bash
+# Deno version management script
+
 DENO_RELEASE_URL="https://api.github.com/repos/denoland/deno/releases"
 source /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/l3laze/sind/master/sind.sh)"
 
