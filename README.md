@@ -35,10 +35,10 @@ v1.0.0          v1.0.0-rc1      v0.40.0         v0.37.1         v0.35.0         
 
 Note:<br>
 This sub-command uses GitHub API.
-If API rate limit exceeded, Setting `$DVMSH_GIHHUBAPI_CREDENTIAL`  as following helps you to access it.
+If API rate limit exceeded, Setting `$DVMSH_GITHUBAPI_CREDENTIAL`  as following helps you to access it.
 
 ```
-$ DVMSH_GIHHUBAPI_CREDENTIAL=horihiro dvm ls-remote
+$ DVMSH_GITHUBAPI_CREDENTIAL=<GITHUB_ACCOUNT> dvm ls-remote
 ```
 
 ## install
