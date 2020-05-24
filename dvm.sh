@@ -51,13 +51,13 @@ which jq 2>&1 1>/dev/null || {
 
 function dvm-ls-remote () {
   if [ -n "${DVMSH_GIHHUBAPI_CREDENTIAL}" ]; then
-    curl -u "${DVMSH_GIHHUBAPI_CREDENTIAL}" -fsSL "${DENO_RELEASE_URL}" | jq -r ".[].name"
+    curl -u "${DVMSH_GIHHUBAPI_CREDENTIAL}" -fsSL "${DENO_RELEASE_URL}" | jq -r ".[].name" | column
   else
     release=$(curl -fsSL "${DENO_RELEASE_URL}" 2>/dev/null)
     if [ -z "${releases}" ]; then
       echo_red "API rate limit might exceeded \nPlease set GitHub.com credential to \${DVMSH_GIHHUBAPI_CREDENTIAL}" >&2
     fi
-    echo ${releases} | jq -r ".[].name"
+    echo ${releases} | jq -r ".[].name" | column
   fi
 }
 
