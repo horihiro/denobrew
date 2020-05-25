@@ -2,7 +2,6 @@
 # Deno version management script
 
 DENO_RELEASE_URL="https://api.github.com/repos/denoland/deno/releases"
-source /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/l3laze/sind/master/sind.sh)"
 
 DVM_HOME="${HOME}/.dvm.sh"
 DVM_RELEASE="${DVM_HOME}/releases"
@@ -134,6 +133,7 @@ function dvm-uninstall () {
 }
 
 if [ -z "$1" ]; then
+  source /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/l3laze/sind/master/sind.sh)"
   userChoice=$(sind "Choose sub-command:" ${SUBCOMMANDS[@]})
   subCmd=(${SUBCOMMANDS[userChoice]})
 else
