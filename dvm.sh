@@ -107,11 +107,12 @@ function dvm-use () {
   fi
   deno_install=${DENO_INSTALL:-${HOME}/.deno}
   unlink ${deno_install} 2>/dev/null
-  ln -s "${DVM_RELEASE}/${deno_version}/" ${deno_install}
+  ln -s "${DVM_RELEASE}/${deno_version}/bin" ${deno_install}
 
   deno_dir=$(deno info | grep DENO_DIR | cut -d " " -f 3)
   deno_dir=${deno_dir//\"/}
-  unlink ${deno_dir} || rm -rf ${deno_dir}
+  unlink ${deno_dir} || rm -rf ${deno_dir} 2>/dev/null
+  mkdir -p $(dirname ${deno_dir})
   ln -s "${DVM_CACHE}/${deno_version}/" ${deno_dir}
 
   deno --version 2>/dev/null || echo_red "Please add \`${deno_install}\` to PATH." >&2
