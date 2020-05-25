@@ -20,7 +20,8 @@ This script can be executable under following environment.
   - curl and jq are installed
 
 Note:<br>
-This is tested on Ubuntu 16 on WSL only.
+This is tested on Ubuntu 16 on WSL only.<br>
+To Mac users, Please try this and give me feedback.
 
 # How to use/Sub-commands
 ## `ls-remote`
