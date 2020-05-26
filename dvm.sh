@@ -10,6 +10,7 @@ DVM_CACHE="${DVM_HOME}/cache"
 SUBCOMMANDS=(
   "ls"
   "ls-remote"
+  "ls-all"
   "install"
   "uninstall"
   "use"
@@ -90,6 +91,14 @@ function dvm-ls () {
   else
     echo "${installed[*]}" | column
   fi
+}
+
+function dvm-ls-all () {
+  echo "Remote:"
+  dvm-ls-remote
+  echo ""
+  echo "Local:"
+  dvm-ls
 }
 
 function dvm-install () {
@@ -174,9 +183,3 @@ fi
 
 dvm-"${subCmd[@]}"
 
-# case "$subCmd" in
-#   "ls-remote") ls-remote;;
-#   1) echo "selected No";;
-#   2) echo "selected Batman";;
-#   3) echo "selected Cancel";;
-# esac
