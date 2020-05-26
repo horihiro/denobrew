@@ -105,7 +105,7 @@ function dvm-use () {
     echo_red "  \`$(basename $0) install "$1"\`" >&2
     exit 1;
   fi
-  deno_install=${DENO_INSTALL:-${HOME}/.deno}
+  deno_install=${DENO_INSTALL:-${HOME}/.deno}/bin
   unlink ${deno_install} 2>/dev/null
   ln -s "${DVM_RELEASE}/${deno_version}/bin" ${deno_install}
 
@@ -123,14 +123,21 @@ function dvm-uninstall () {
     echo_red "Please set version string (ex. \`v1.0.0\`)." >&2
     exit 1;
   fi
-  deno_version=$(dvm-ls | grep -x "$1" || echo "")
-  if [ "${deno_version}" != "$1" ]; then
+  deno_uninstall_version=$(dvm-ls | grep -x "$1" || echo "")
+  if [ "${deno_uninstall_version}" != "$1" ]; then
     echo_red "Deno \`$1\` is not found in your machine." >&2
     exit 1;
   fi
-  unlink ${DENO_INSTALL:-${HOME}/.deno} 2>/dev/null
-  rm -rf "${DVM_RELEASE}/${deno_version}/"
-  rm -rf "${DVM_CACHE}/${deno_version}/"
+  deno_current_version="$(deno --version | grep deno)"
+  deno_current_version=v${deno_current_version#deno }
+  if [ "${deno_uninstall_version}" = "${deno_current_version}" ]; then
+    deno_dir=$(deno info | grep DENO_DIR | cut -d " " -f 3)
+    deno_dir=${deno_dir//\"/}
+    unlink ${deno_dir} || rm -rf ${deno_dir}
+    unlink ${DENO_INSTALL:-${HOME}/.deno}/bin
+  fi
+  rm -rf "${DVM_RELEASE}/${deno_uninstall_version}/"
+  rm -rf "${DVM_CACHE}/${deno_uninstall_version}/"
 }
 
 if [ -z "$1" ]; then
@@ -141,7 +148,7 @@ else
   subCmd=($@)
 fi
 
-if ! $(echo ${SUBCOMMANDS[@]} | grep -q -w ${subCmd[0]} || echo false) ; then 
+if ! $(echo ${SUBCOMMANDS[@]} | grep -q -w ${subCmd[0]} || echo false) ; then
   echo_red "Sub command \`$1\` is not available." >&2
   exit 1
 fi
@@ -154,4 +161,3 @@ dvm-"${subCmd[@]}"
 #   2) echo "selected Batman";;
 #   3) echo "selected Cancel";;
 # esac
-
