@@ -39,14 +39,19 @@ function echo_red () {
   echo -e "\e[31m$1\e[m"
 }
 
-which curl 2>&1 1>/dev/null || {
-  echo_red "\`curl\` is not found in your machine.\nPlease install curl." >&2
-  exit 1
-}
-which jq 2>&1 1>/dev/null || {
-  echo_red "\`jq\` is not found in your machine.\nPlease install jq." >&2
-  exit 1
-}
+DEPENDENCIES=(
+  "unzip"
+  "curl"
+  "jq"
+)
+
+for dep in ${DEPENDENCIES}
+do
+  which ${dep} 2>&1 1>/dev/null || {
+    echo_red "\`${dep}\` is not found in your machine.\nPlease install ${dep}." >&2
+    exit 1
+  }
+done
 
 function dvm-ls-remote () {
   if [ -n "${DVMSH_GITHUBAPI_CREDENTIAL}" ]; then
@@ -111,7 +116,7 @@ function dvm-use () {
 
   deno_dir=$(deno info | grep DENO_DIR | cut -d " " -f 3)
   deno_dir=${deno_dir//\"/}
-  unlink ${deno_dir} || rm -rf ${deno_dir} 2>/dev/null
+  unlink ${deno_dir} 2>/dev/null || rm -rf ${deno_dir} 2>/dev/null
   mkdir -p $(dirname ${deno_dir})
   ln -s "${DVM_CACHE}/${deno_version}/" ${deno_dir}
 
@@ -133,8 +138,8 @@ function dvm-uninstall () {
   if [ "${deno_uninstall_version}" = "${deno_current_version}" ]; then
     deno_dir=$(deno info | grep DENO_DIR | cut -d " " -f 3)
     deno_dir=${deno_dir//\"/}
-    unlink ${deno_dir} || rm -rf ${deno_dir}
-    unlink ${DENO_INSTALL:-${HOME}/.deno}/bin
+    unlink ${deno_dir} 2>/dev/null || rm -rf ${deno_dir}
+    unlink ${DENO_INSTALL:-${HOME}/.deno}/bin 2>/dev/null
   fi
   rm -rf "${DVM_RELEASE}/${deno_uninstall_version}/"
   rm -rf "${DVM_CACHE}/${deno_uninstall_version}/"
