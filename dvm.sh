@@ -112,6 +112,7 @@ function dvm-use () {
   fi
   deno_install=${DENO_INSTALL:-${HOME}/.deno}/bin
   unlink ${deno_install} 2>/dev/null
+  mkdir -p $(dirname ${deno_install})
   ln -s "${DVM_RELEASE}/${deno_version}/bin" ${deno_install}
 
   deno_dir=$(deno info | grep DENO_DIR | cut -d " " -f 3)
