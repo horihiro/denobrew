@@ -43,6 +43,7 @@ DEPENDENCIES=(
   "unzip"
   "curl"
   "jq"
+  "column"
 )
 
 for dep in ${DEPENDENCIES}
@@ -55,18 +56,24 @@ done
 
 function dvm-ls-remote () {
   if [ -n "${DVMSH_GITHUBAPI_CREDENTIAL}" ]; then
-    curl -u "${DVMSH_GITHUBAPI_CREDENTIAL}" -fsSL "${DENO_RELEASE_URL}" | jq -r ".[].name"
+    releases=$(curl -u "${DVMSH_GITHUBAPI_CREDENTIAL}" -fsSL "${DENO_RELEASE_URL}")
   else
-    release=$(curl -fsSL "${DENO_RELEASE_URL}" 2>/dev/null)
+    releases=$(curl -fsSL "${DENO_RELEASE_URL}" 2>/dev/null)
     if [ -z "${releases}" ]; then
       echo_red "API rate limit might exceeded \nPlease set GitHub.com credential to \${DVMSH_GITHUBAPI_CREDENTIAL}" >&2
+      return
     fi
+  fi
+  if [ "$1" = "--flat" ]; then
     echo ${releases} | jq -r ".[].name"
+  else
+    echo ${releases} | jq -r ".[].name" | column
   fi
 }
 
 function dvm-ls () {
-  bins=$(ls ${DVM_RELEASE}/*/bin/deno 2>/dev/null)
+  bins=$(ls -r ${DVM_RELEASE}/*/bin/deno 2>/dev/null)
+  installed=()
   for bin in ${bins}
   do
     v="$(${bin} --version | grep deno)"
@@ -74,9 +81,15 @@ function dvm-ls () {
     e=${bin#${DVM_RELEASE}/}
     e=${e%/bin/deno}
     if [ "${e}" = ${v} ]; then
-      echo ${v}
+      installed=("${installed[@]}" ${v})
     fi
   done
+  IFS=$'\n'
+  if [ "$1" = "--flat" ]; then
+    echo "${installed[*]}"
+  else
+    echo "${installed[*]}" | column
+  fi
 }
 
 function dvm-install () {
@@ -84,7 +97,7 @@ function dvm-install () {
     echo_red "Please set version string (ex. \`v1.0.0\`)." >&2
     exit 1;
   fi
-  deno_version=$(dvm-ls-remote | grep -x "$1" || echo "")
+  deno_version=$(dvm-ls-remote --flat| grep -x "$1" || echo "")
   if [ "${deno_version}" != "$1" ]; then
     echo_red "Deno \`$1\` is not found in Deno releases." >&2;
     echo_red "Please check released versions by \`$(basename $0) ls-remote\`." >&2
@@ -102,7 +115,7 @@ function dvm-use () {
     echo_red "Please set version string (ex. \`v1.0.0\`)." >&2
     exit 1;
   fi
-  deno_version=$(dvm-ls | grep -x "$1" || echo "")
+  deno_version=$(dvm-ls --flat | grep -x "$1" || echo "")
   if [ "${deno_version}" != "$1" ]; then
     echo_red "Deno \`$1\` is not found in your machine." >&2
     echo_red "Please retry after executing following command." >&2
@@ -129,7 +142,7 @@ function dvm-uninstall () {
     echo_red "Please set version string (ex. \`v1.0.0\`)." >&2
     exit 1;
   fi
-  deno_uninstall_version=$(dvm-ls | grep -x "$1" || echo "")
+  deno_uninstall_version=$(dvm-ls --flat | grep -x "$1" || echo "")
   if [ "${deno_uninstall_version}" != "$1" ]; then
     echo_red "Deno \`$1\` is not found in your machine." >&2
     exit 1;
