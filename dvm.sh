@@ -91,6 +91,13 @@ function dvm-ls () {
   else
     echo "${installed[*]}" | column
   fi
+  echo ""
+  v="$(deno --version 2>/dev/null| grep deno)"
+  v=v${v#deno }
+  if [ "${v}" = "v" ]; then
+    v="(not selected)";
+  fi
+  echo "current: ${v}"
 }
 
 function dvm-ls-all () {
