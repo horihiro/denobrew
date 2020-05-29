@@ -179,6 +179,17 @@ if [ -z "$1" ]; then
   source /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/l3laze/sind/master/sind.sh)"
   userChoice=$(sind "Choose sub-command:" ${SUBCOMMANDS[@]})
   subCmd=(${SUBCOMMANDS[userChoice]})
+  if [ "${subCmd}" = "use" -o "${subCmd}" = "uninstall" ]; then
+    dvm-ls >&2
+    echo ""
+    read -p "version: " version
+  elif [ "${subCmd}" = "install" ]; then
+    dvm-ls-remote >&2
+    echo ""
+    read -p "\nversion: " version
+  fi
+  subCmd=("${subCmd[@]}" ${version})
+
 else
   subCmd=($@)
 fi
