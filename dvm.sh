@@ -1,7 +1,7 @@
 #!/bin/bash
 # Deno version management script
 
-DENO_RELEASE_URL="https://api.github.com/repos/denoland/deno/releases"
+DENO_RELEASE_URL="https://api.github.com/repos/denoland/deno/releases?per_page=100"
 
 DVM_HOME="${HOME}/.dvm.sh"
 DVM_RELEASE="${DVM_HOME}/releases"
@@ -66,9 +66,9 @@ function dvm-ls-remote () {
     fi
   fi
   if [ "$1" = "--flat" ]; then
-    echo ${releases} | jq -r ".[].name"
+    echo ${releases} | jq -r ".[].tag_name"
   else
-    echo ${releases} | jq -r ".[].name" | column
+    echo ${releases} | jq -r ".[].tag_name" | column
   fi
 }
 
