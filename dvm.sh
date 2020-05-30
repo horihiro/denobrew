@@ -47,7 +47,7 @@ DEPENDENCIES=(
   "column"
 )
 
-for dep in ${DEPENDENCIES}
+for dep in ${DEPENDENCIES[@]}
 do
   which ${dep} 2>&1 1>/dev/null || {
     echo_red "\`${dep}\` is not found in your machine.\nPlease install ${dep}." >&2
