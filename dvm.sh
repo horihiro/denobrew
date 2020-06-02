@@ -183,22 +183,18 @@ function dvm-uninstall () {
 
 if [ -z "$1" ]; then
   source /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/l3laze/sind/master/sind.sh)"
-  userChoice=$(sind "Choose sub-command:" ${SUBCOMMANDS[@]})
-  subCmd=(${SUBCOMMANDS[userChoice]})
+  subCmd=$(sind "Choose sub-command:" ${SUBCOMMANDS[@]})
+  echo ""
   if [ "${subCmd}" = "use" -o "${subCmd}" = "uninstall" ]; then
-    # versions=($(dvm-ls --flat))
-    # userChoice=$(sind "Choose version:" ${versions[@]})
-    # version=(${versions[userChoice]})
+    echo "installed versions:"
     dvm-ls >&2
     echo ""
     read -p "version: " version
   elif [ "${subCmd}" = "install" ]; then
-    # versions=($(dvm-ls-remote --flat))
-    # userChoice=$(sind "Choose version:" ${versions[@]})
-    # version=(${versions[userChoice]})
+    echo "released versions:"
     dvm-ls-remote >&2
     echo ""
-    read -p "\nversion: " version
+    read -p "version: " version
   fi
   subCmd=("${subCmd[@]}" ${version})
 
