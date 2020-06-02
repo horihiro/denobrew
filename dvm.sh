@@ -146,6 +146,10 @@ function dvm-use () {
   mkdir -p $(dirname ${deno_install})
   ln -s "${DVM_RELEASE}/${deno_version}/bin" ${deno_install}
 
+  which deno 2>&1 1>/dev/null || {
+    echo_red "Please add \`${deno_install}\` to PATH and do again." >&2
+    exit 1
+  }
   deno_dir=$(deno info | grep DENO_DIR | cut -d " " -f 3)
   deno_dir=${deno_dir//\"/}
   unlink ${deno_dir} 2>/dev/null || rm -rf ${deno_dir} 2>/dev/null
