@@ -43,8 +43,10 @@ function echo_red () {
 DEPENDENCIES=(
   "unzip"
   "curl"
-  "jq"
   "column"
+  "tr"
+  "grep"
+  "cut"
 )
 
 for dep in ${DEPENDENCIES[@]}
@@ -66,9 +68,9 @@ function dvm-ls-remote () {
     fi
   fi
   if [ "$1" = "--flat" ]; then
-    echo ${releases} | jq -r ".[].tag_name"
+    echo ${releases} | tr "," "\n" | grep tag_name | cut -d \" -f 4
   else
-    echo ${releases} | jq -r ".[].tag_name" | column
+    echo ${releases} | tr "," "\n" | grep tag_name | cut -d \" -f 4 | column
   fi
 }
 
@@ -180,10 +182,16 @@ if [ -z "$1" ]; then
   userChoice=$(sind "Choose sub-command:" ${SUBCOMMANDS[@]})
   subCmd=(${SUBCOMMANDS[userChoice]})
   if [ "${subCmd}" = "use" -o "${subCmd}" = "uninstall" ]; then
+    # versions=($(dvm-ls --flat))
+    # userChoice=$(sind "Choose version:" ${versions[@]})
+    # version=(${versions[userChoice]})
     dvm-ls >&2
     echo ""
     read -p "version: " version
   elif [ "${subCmd}" = "install" ]; then
+    # versions=($(dvm-ls-remote --flat))
+    # userChoice=$(sind "Choose version:" ${versions[@]})
+    # version=(${versions[userChoice]})
     dvm-ls-remote >&2
     echo ""
     read -p "\nversion: " version
