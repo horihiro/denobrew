@@ -47,6 +47,7 @@ DEPENDENCIES=(
   "tr"
   "grep"
   "cut"
+  "perl"
 )
 
 for dep in ${DEPENDENCIES[@]}
@@ -56,6 +57,22 @@ do
     exit 1
   }
 done
+
+function __colorize () {
+  args=($@)
+  release=$1
+  used=$2
+  unset args[0]
+  unset args[1]
+  installed=("${args[@]}")
+  if [[ "${used}" = "${release}" ]]; then
+    echo -e "\e[36m${release}\e[m"
+  elif [[ " ${installed[@]} " =~ " ${release} " ]]; then
+    echo -e "\e[32m${release}\e[m"
+  else
+    echo -e "\e[37m${release}\e[m"
+  fi
+}
 
 function denobrew-ls-remote () {
   if [ -n "${DENOBREWSH_GITHUBAPI_CREDENTIAL}" ]; then
@@ -67,15 +84,21 @@ function denobrew-ls-remote () {
       return
     fi
   fi
+  export -f __colorize
+  installed=($(denobrew-ls --flat | perl -pe 's/\x1b\[[0-9;]*[mG]//g'))
+  v="$(deno --version 2>/dev/null | grep deno)"
+  v=v${v#deno }
   if [ "$1" = "--flat" ]; then
-    echo ${releases} | tr "," "\n" | grep tag_name | cut -d \" -f 4
+    echo ${releases} | tr "," "\n" | grep tag_name | cut -d \" -f 4 | xargs -L 1 -I% bash -c "__colorize % ${v} $(echo ${installed[@]})"
   else
-    echo ${releases} | tr "," "\n" | grep tag_name | cut -d \" -f 4 | column
+    echo ${releases} | tr "," "\n" | grep tag_name | cut -d \" -f 4 | xargs -L 1 -I% bash -c "__colorize % ${v} $(echo ${installed[@]})" | column
   fi
 }
 
 function denobrew-ls () {
   bins=$(ls -r ${DENOBREW_RELEASE}/*/bin/deno 2>/dev/null)
+  c="$(deno --version 2>/dev/null| grep deno)"
+  c=v${c#deno }
   installed=()
   for bin in ${bins}
   do
@@ -83,23 +106,20 @@ function denobrew-ls () {
     v=v${v#deno }
     e=${bin#${DENOBREW_RELEASE}/}
     e=${e%/bin/deno}
-    if [ "${e}" = ${v} ]; then
-      installed=("${installed[@]}" ${v})
+    if [ "${e}" = "${v}" ]; then
+      if [ "${c}" = "${v}" ]; then
+        installed=("${installed[@]}" "\e[36m${v}\e[m")
+      else
+        installed=("${installed[@]}" "\e[37m${v}\e[m")
+      fi
     fi
   done
   IFS=$'\n'
   if [ "$1" = "--flat" ]; then
-    echo "${installed[*]}"
+    echo -e "${installed[*]}"
   else
-    echo "${installed[*]}" | column
+    echo -e "${installed[*]}" | column
   fi
-  echo ""
-  v="$(deno --version 2>/dev/null| grep deno)"
-  v=v${v#deno }
-  if [ "${v}" = "v" ]; then
-    v="(not selected)";
-  fi
-  echo "current: ${v}"
 }
 
 function denobrew-ls-all () {
@@ -115,12 +135,13 @@ function denobrew-install () {
     echo_red "Please set version string (ex. \`v1.0.0\`)." >&2
     exit 1;
   fi
-  deno_version=$(denobrew-ls-remote --flat| grep -x "$1" || echo "")
-  if [ "${deno_version}" != "$1" ]; then
+  deno_version=$(denobrew-ls-remote --flat | grep "$1" || echo "")
+  if [[ "${deno_version}" =~ *"$1"* ]]; then
     echo_red "Deno \`$1\` is not found in Deno releases." >&2;
     echo_red "Please check released versions by \`$(basename $0) ls-remote\`." >&2
     exit 1;
   fi
+  deno_version=$1
   DENO_INSTALL=${DENOBREW_RELEASE}/${deno_version}
   mkdir -p ${DENO_INSTALL}
   mkdir -p ${DENOBREW_CACHE}/${deno_version}
@@ -133,21 +154,22 @@ function denobrew-use () {
     echo_red "Please set version string (ex. \`v1.0.0\`)." >&2
     exit 1;
   fi
-  deno_version=$(denobrew-ls --flat | grep -x "$1" || echo "")
-  if [ "${deno_version}" != "$1" ]; then
+  deno_version=$(denobrew-ls --flat | grep "$1" || echo "")
+  if [[ "${deno_version}" =~ *"$1"* ]]; then
     echo_red "Deno \`$1\` is not found in your machine." >&2
     echo_red "Please retry after executing following command." >&2
     echo_red "" >&2
     echo_red "  \`$(basename $0) install "$1"\`" >&2
     exit 1;
   fi
+  deno_version=$1
   deno_install=${DENO_INSTALL:-${HOME}/.deno}/bin
   unlink ${deno_install} 2>/dev/null
   mkdir -p $(dirname ${deno_install})
   ln -s "${DENOBREW_RELEASE}/${deno_version}/bin" ${deno_install}
 
   which deno 2>&1 1>/dev/null || {
-    echo_red "Please add \`${deno_install}\` to PATH and do again." >&2
+    echo_red "Please add \`${deno_version}\` to PATH and do again." >&2
     exit 1
   }
   deno_dir=$(deno info | grep DENO_DIR | cut -d " " -f 3)
@@ -164,14 +186,15 @@ function denobrew-uninstall () {
     echo_red "Please set version string (ex. \`v1.0.0\`)." >&2
     exit 1;
   fi
-  deno_uninstall_version=$(denobrew-ls --flat | grep -x "$1" || echo "")
-  if [ "${deno_uninstall_version}" != "$1" ]; then
+  deno_uninstall_version=$(denobrew-ls --flat | grep "$1" || echo "")
+  if [[ "${deno_uninstall_version}" =~ *"$1"* ]]; then
     echo_red "Deno \`$1\` is not found in your machine." >&2
     exit 1;
   fi
+  deno_uninstall_version=$1
   deno_current_version="$(deno --version | grep deno)"
   deno_current_version=v${deno_current_version#deno }
-  if [ "${deno_uninstall_version}" = "${deno_current_version}" ]; then
+  if [ "$1" = "${deno_current_version}" ]; then
     deno_dir=$(deno info | grep DENO_DIR | cut -d " " -f 3)
     deno_dir=${deno_dir//\"/}
     unlink ${deno_dir} 2>/dev/null || rm -rf ${deno_dir}
@@ -184,17 +207,14 @@ function denobrew-uninstall () {
 if [ -z "$1" ]; then
   source /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/l3laze/sind/master/sind.sh)"
   subCmd=$(sind "Choose sub-command:" ${SUBCOMMANDS[@]})
-  echo ""
+  echo "----"
   if [ "${subCmd}" = "use" -o "${subCmd}" = "uninstall" ]; then
-    echo "installed versions:"
-    denobrew-ls >&2
-    echo ""
-    read -p "version: " version
+    versions=($(denobrew-ls --flat))
+    version=$(sind "Choose version:" ${versions[@]} | perl -pe 's/\x1b\[[0-9;]*[mG]//g')
+    echo "----"
   elif [ "${subCmd}" = "install" ]; then
-    echo "released versions:"
-    denobrew-ls-remote >&2
-    echo ""
-    read -p "version: " version
+    versions=($(denobrew-ls-remote --flat))
+    version=$(sind "Choose version:" ${versions[@]} | perl -pe 's/\x1b\[[0-9;]*[mG]//g')
   fi
   subCmd=("${subCmd[@]}" ${version})
 
