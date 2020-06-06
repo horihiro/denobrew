@@ -1,5 +1,5 @@
 # [denobrew](https://raw.githubusercontent.com/horihiro/denobrew/master/denobrew.sh)
-Version management script for Deno🦕
+Version management `brew` 🍺 script for Deno🦕
 
 # Install
 Download this script and set executable 
