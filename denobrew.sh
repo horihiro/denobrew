@@ -13,6 +13,7 @@ SUBCOMMANDS=(
   "install"
   "uninstall"
   "use"
+  "migrate-package-from"
 )
 
 function echo_cyan () {
@@ -75,8 +76,7 @@ function denobrew-ls-remote () {
   if [[ " $@ " =~ " --decolorize " ]]; then
     for r in ${releases_buf}
     do
-        releases=("${releases[@]}" "\e[37m${r}\e[m")
-      # releases=("${releases[@]}" "${r}")
+      releases=("${releases[@]}" "${r}")
     done
   else
     for r in ${releases_buf}
@@ -208,6 +208,32 @@ function denobrew-uninstall () {
   fi
   rm -rf "${DENOBREW_RELEASE}/${deno_uninstall_version}/"
   rm -rf "${DENOBREW_CACHE}/${deno_uninstall_version}/"
+}
+
+function denobrew-migrate-package-from () {
+  if [ -z "$1" ]; then
+    echo_red "Please set version string (ex. \`v1.0.0\`)." >&2
+    exit 1;
+  fi
+  deno_target_version=$(denobrew-ls --flat --decolorize | grep -x "$1" || echo "")
+  if [ -z "${deno_target_version}" ]; then
+    echo_red "Deno \`$1\` is not found in your machine." >&2
+    exit 1;
+  fi
+  packages=$(ls ${DENOBREW_RELEASE}/${deno_target_version}/bin/ | grep -vx "deno")
+  echo_blue "Found following package(s) in ${deno_target_version}:">&2
+  echo_blue "${packages}" | perl -pe 's/^/ /' >&2
+  echo >&2
+  for pkg in ${packages}
+  do
+    cmd=$(cat "${DENOBREW_RELEASE}/${deno_target_version}/bin/${pkg}" | grep -v "#")
+    cmd=${cmd//\"/}
+    cmd=${cmd// run / install }
+    cmd=${cmd// http/ -f -n ${pkg} http}
+    cmd=${cmd%\$@}
+    echo_blue "Installing ${pkg} ...">&2
+    eval "${cmd%\$@} 2>/dev/null"
+  done
 }
 
 if [ -z "$1" ]; then

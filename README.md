@@ -109,3 +109,38 @@ v1.0.0          v1.0.0-rc1      v0.40.0         v0.37.1         v0.35.0         
 Local:
 v1.0.2
 ```
+
+## `migrate-package-from`
+Installing package(s) into current version from specified version
+
+```
+# check current version and installed package(s)
+$ denobrew.sh use v1.0.4
+deno 1.0.4
+v8 8.4.300
+typescript 3.9.2
+$ ls ${DENO_INSTALL}/bin | grep -xv "deno"
+dem
+denofunc
+
+# install new version
+$ denobrew.sh install v1.0.5
+######################################################################## 100.0%
+Archive:  /PATH/TO/DENOBREW_HOME/releases/v1.0.5/bin/deno.zip
+  inflating: deno
+Deno was installed successfully to /PATH/TO/DENOBREW_HOME/releases/v1.0.5/bin/deno
+Please execute `63 use v1.0.5` for activating the version.
+
+# migrate package(s) into current version from specified version
+$ denobrew.sh migrate-package-from v1.0.4
+Found following package(s) in v1.0.4:
+ dem
+ denofunc
+
+Installing dem ...
+✅ Successfully installed dem
+/home/horihiro/.deno/bin/dem
+Installing denofunc ...
+✅ Successfully installed denofunc
+/home/horihiro/.deno/bin/denofunc
+```
