@@ -156,60 +156,6 @@ function denobrew-install () {
   echo_blue "Please execute \`$(basename $0) use ${deno_version}\` for activating the version." >&2
 }
 
-function denobrew-use () {
-  if [ -z "$1" ]; then
-    echo_red "Please set version string (ex. \`v1.0.0\`)." >&2
-    exit 1;
-  fi
-  deno_version=$(denobrew-ls --flat --decolorize | grep -x "$1" || echo "")
-  if [ -z "${deno_version}" ]; then
-    echo_red "Deno \`$1\` is not found in your machine." >&2
-    echo_red "Please retry after executing following command." >&2
-    echo_red "" >&2
-    echo_red "  \`$(basename $0) install "$1"\`" >&2
-    exit 1;
-  fi
-  deno_install=${DENO_INSTALL:-${HOME}/.deno}/bin
-  unlink ${deno_install} 2>/dev/null || rm -rf ${deno_install} 2>/dev/null
-  mkdir -p $(dirname ${deno_install})
-  ln -s "${DENOBREW_RELEASE}/${deno_version}/bin" ${deno_install}
-
-  which deno 2>&1 1>/dev/null || {
-    echo_red "Please add \`${deno_version}\` to PATH and do again." >&2
-    exit 1
-  }
-  deno_dir=$(deno info | grep DENO_DIR | cut -d " " -f 3)
-  deno_dir=${deno_dir//\"/}
-  unlink ${deno_dir} 2>/dev/null || rm -rf ${deno_dir} 2>/dev/null
-  mkdir -p $(dirname ${deno_dir})
-  ln -s "${DENOBREW_CACHE}/${deno_version}/" ${deno_dir}
-
-  deno --version 2>/dev/null || echo_red "Please add \`${deno_install}\` to PATH." >&2
-}
-
-function denobrew-uninstall () {
-  if [ -z "$1" ]; then
-    echo_red "Please set version string (ex. \`v1.0.0\`)." >&2
-    exit 1;
-  fi
-  deno_uninstall_version=$(denobrew-ls --flat --decolorize | grep -x "$1" || echo "")
-  if [ -z "${deno_uninstall_version}" ]; then
-    echo_red "Deno \`$1\` is not found in your machine." >&2
-    exit 1;
-  fi
-  deno_uninstall_version=$1
-  deno_current_version="$(deno --version | grep deno || echo)"
-  deno_current_version=v${deno_current_version#deno }
-  if [ "$1" = "${deno_current_version}" ]; then
-    deno_dir=$(deno info | grep DENO_DIR | cut -d " " -f 3)
-    deno_dir=${deno_dir//\"/}
-    unlink ${deno_dir} 2>/dev/null || rm -rf ${deno_dir}
-    unlink ${DENO_INSTALL:-${HOME}/.deno}/bin 2>/dev/null
-  fi
-  rm -rf "${DENOBREW_RELEASE}/${deno_uninstall_version}/"
-  rm -rf "${DENOBREW_CACHE}/${deno_uninstall_version}/"
-}
-
 function denobrew-migrate-package-from () {
   if [ -z "$1" ]; then
     echo_red "Please set version string (ex. \`v1.0.0\`)." >&2
@@ -236,11 +182,72 @@ function denobrew-migrate-package-from () {
   done
 }
 
+function denobrew-use () {
+  if [ -z "$1" ]; then
+    echo_red "Please set version string (ex. \`v1.0.0\`)." >&2
+    exit 1;
+  fi
+  deno_version=$(denobrew-ls --flat --decolorize | grep -x "$1" || echo "")
+  if [ -z "${deno_version}" ]; then
+    echo_red "Deno \`$1\` is not found in your machine." >&2
+    echo_red "Please retry after executing following command." >&2
+    echo_red "" >&2
+    echo_red "  \`$(basename $0) install "$1"\`" >&2
+    exit 1;
+  fi
+  c="$(deno --version 2>/dev/null| grep deno || echo )"
+  c=${c#deno }
+
+  deno_install=${DENO_INSTALL:-${HOME}/.deno}/bin
+  unlink ${deno_install} 2>/dev/null || rm -rf ${deno_install} 2>/dev/null
+  mkdir -p $(dirname ${deno_install})
+  ln -s "${DENOBREW_RELEASE}/${deno_version}/bin" ${deno_install}
+
+  which deno 2>&1 1>/dev/null || {
+    echo_red "Please add \`${deno_version}\` to PATH and do again." >&2
+    exit 1
+  }
+  deno_dir=$(deno info | grep DENO_DIR | cut -d " " -f 3)
+  deno_dir=${deno_dir//\"/}
+  unlink ${deno_dir} 2>/dev/null || rm -rf ${deno_dir} 2>/dev/null
+  mkdir -p $(dirname ${deno_dir})
+  ln -s "${DENOBREW_CACHE}/${deno_version}/" ${deno_dir}
+
+  deno --version | perl -pe 's/^/ /' 2>/dev/null || echo_red "Please add \`${deno_install}\` to PATH." >&2
+  if [[ " $@ " =~ " --with-migration " ]]; then
+    echo 2>/dev/null
+    denobrew-migrate-package-from "v${c}"
+  fi
+}
+
+function denobrew-uninstall () {
+  if [ -z "$1" ]; then
+    echo_red "Please set version string (ex. \`v1.0.0\`)." >&2
+    exit 1;
+  fi
+  deno_uninstall_version=$(denobrew-ls --flat --decolorize | grep -x "$1" || echo "")
+  if [ -z "${deno_uninstall_version}" ]; then
+    echo_red "Deno \`$1\` is not found in your machine." >&2
+    exit 1;
+  fi
+  deno_uninstall_version=$1
+  deno_current_version="$(deno --version | grep deno || echo)"
+  deno_current_version=v${deno_current_version#deno }
+  if [ "$1" = "${deno_current_version}" ]; then
+    deno_dir=$(deno info | grep DENO_DIR | cut -d " " -f 3)
+    deno_dir=${deno_dir//\"/}
+    unlink ${deno_dir} 2>/dev/null || rm -rf ${deno_dir}
+    unlink ${DENO_INSTALL:-${HOME}/.deno}/bin 2>/dev/null
+  fi
+  rm -rf "${DENOBREW_RELEASE}/${deno_uninstall_version}/"
+  rm -rf "${DENOBREW_CACHE}/${deno_uninstall_version}/"
+}
+
 if [ -z "$1" ]; then
   source /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/l3laze/sind/master/sind.sh)"
   subCmd=$(sind "Choose sub-command:" ${SUBCOMMANDS[@]})
   echo "----"
-  if [[ " use uninstall " =~ " ${subCmd} " ]]; then
+  if [[ " use uninstall migrate-package-from " =~ " ${subCmd} " ]]; then
     echo "installed versions:"
     denobrew-ls >&2
     echo ""
