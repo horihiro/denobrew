@@ -1,10 +1,16 @@
 #!/bin/bash
 # Deno version management script
+set -u
+
 DENO_RELEASE_URL="https://api.github.com/repos/denoland/deno/releases?per_page=100"
 
 DENOBREW_HOME="${HOME}/.denobrew"
 DENOBREW_RELEASE="${DENOBREW_HOME}/releases"
 DENOBREW_CACHE="${DENOBREW_HOME}/cache"
+
+if [ -v ${DENOBREWSH_GITHUBAPI_CREDENTIAL:-} ]; then
+  DENOBREWSH_GITHUBAPI_CREDENTIAL='';
+fi
 
 SUBCOMMANDS=(
   "ls"
@@ -72,7 +78,7 @@ function denobrew-ls-remote () {
   v="$(deno --version 2>/dev/null | grep deno || echo)"
   v=v${v#deno }
   releases_buf=$(echo ${releases_buf} | tr "," "\n" | grep tag_name | cut -d \" -f 4)
-  releases=()
+  releases=('')
   if [[ " $@ " =~ " --decolorize " ]]; then
     for r in ${releases_buf}
     do
@@ -102,7 +108,7 @@ function denobrew-ls () {
   bins=$(ls -r ${DENOBREW_RELEASE}/*/bin/deno 2>/dev/null)
   c="$(deno --version 2>/dev/null| grep deno || echo )"
   c=v${c#deno }
-  installed=()
+  installed=('')
   for bin in ${bins}
   do
     v="$(${bin} --version | grep deno)"
@@ -138,7 +144,7 @@ function denobrew-ls-all () {
 }
 
 function denobrew-install () {
-  if [ -z "$1" ]; then
+  if [ $# -eq 0 ]; then
     echo_red "Please set version string (ex. \`v1.0.0\`)." >&2
     exit 1;
   fi
@@ -157,7 +163,7 @@ function denobrew-install () {
 }
 
 function denobrew-migrate-package-from () {
-  if [ -z "$1" ]; then
+  if [ $# -eq 0 ]; then
     echo_red "Please set version string (ex. \`v1.0.0\`)." >&2
     exit 1;
   fi
@@ -172,10 +178,8 @@ function denobrew-migrate-package-from () {
   echo >&2
   for pkg in ${packages}
   do
-    cmd=$(cat "${DENOBREW_RELEASE}/${deno_target_version}/bin/${pkg}" | grep -v "#")
-    cmd=${cmd//\"/}
-    cmd=${cmd// run / install }
-    cmd=${cmd// http/ -f -n ${pkg} http}
+    cmd=$(cat "${DENOBREW_RELEASE}/${deno_target_version}/bin/${pkg}" | grep -v "#" | tr -d "\"")
+    cmd=${cmd// run / install -f -n ${pkg} }
     cmd=${cmd%\$@}
     echo_blue "Installing ${pkg} ...">&2
     eval "${cmd%\$@} 2>/dev/null"
@@ -183,7 +187,7 @@ function denobrew-migrate-package-from () {
 }
 
 function denobrew-use () {
-  if [ -z "$1" ]; then
+  if [ $# -eq 0 ]; then
     echo_red "Please set version string (ex. \`v1.0.0\`)." >&2
     exit 1;
   fi
@@ -221,7 +225,7 @@ function denobrew-use () {
 }
 
 function denobrew-uninstall () {
-  if [ -z "$1" ]; then
+  if [ $# -eq 0 ]; then
     echo_red "Please set version string (ex. \`v1.0.0\`)." >&2
     exit 1;
   fi
@@ -243,9 +247,9 @@ function denobrew-uninstall () {
   rm -rf "${DENOBREW_CACHE}/${deno_uninstall_version}/"
 }
 
-if [ -z "$1" ]; then
+if [ $# -eq 0 ]; then
   source /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/l3laze/sind/master/sind.sh)"
-  subCmd=$(sind "Choose sub-command:" ${SUBCOMMANDS[@]})
+  subCmd=$(sind "line" "Choose sub-command:" ${SUBCOMMANDS[@]})
   echo "----"
   if [[ " use uninstall migrate-package-from " =~ " ${subCmd} " ]]; then
     echo "installed versions:"
@@ -257,6 +261,8 @@ if [ -z "$1" ]; then
     denobrew-ls-remote >&2
     echo ""
     read -p "version: " version
+  else
+    version=""
   fi
   subCmd=("${subCmd[@]}" ${version})
 
