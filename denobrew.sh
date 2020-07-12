@@ -248,7 +248,7 @@ function denobrew-uninstall () {
 }
 
 if [ $# -eq 0 ]; then
-  source /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/l3laze/sind/master/sind.sh)"
+  source /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/l3laze/sind/b47ba100afcaa7e44e3a11c8cd12cd25a4af412b/sind.sh)"
   subCmd=$(sind "line" "Choose sub-command:" ${SUBCOMMANDS[@]})
   echo "----"
   if [[ " use uninstall migrate-package-from " =~ " ${subCmd} " ]]; then
