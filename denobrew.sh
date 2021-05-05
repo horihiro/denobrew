@@ -75,10 +75,10 @@ function denobrew-ls-remote () {
     fi
   fi
   installed=($(denobrew-ls --flat --decolorize ))
-  v="$(deno --version 2>/dev/null | grep deno || echo)"
+  v="$(deno --version 2>/dev/null | grep deno | cut -d ' ' -f 1-2 || echo )"
   v=v${v#deno }
   releases_buf=$(echo ${releases_buf} | tr "," "\n" | grep tag_name | cut -d \" -f 4)
-  releases=('')
+  releases=()
   if [[ " $@ " =~ " --decolorize " ]]; then
     for r in ${releases_buf}
     do
@@ -106,12 +106,12 @@ function denobrew-ls-remote () {
 
 function denobrew-ls () {
   bins=$(ls -r ${DENOBREW_RELEASE}/*/bin/deno 2>/dev/null)
-  c="$(deno --version 2>/dev/null| grep deno || echo )"
+  c="$(deno --version 2>/dev/null | grep deno | cut -d ' ' -f 1-2 || echo )"
   c=v${c#deno }
-  installed=('')
+  installed=()
   for bin in ${bins}
   do
-    v="$(${bin} --version | grep deno)"
+    v="$(${bin} --version | grep deno | cut -d ' ' -f 1-2)"
     v=v${v#deno }
     e=${bin#${DENOBREW_RELEASE}/}
     e=${e%/bin/deno}
@@ -178,11 +178,13 @@ function denobrew-migrate-package-from () {
   echo >&2
   for pkg in ${packages}
   do
-    cmd=$(cat "${DENOBREW_RELEASE}/${deno_target_version}/bin/${pkg}" | grep -v "#" | tr -d "\"")
-    cmd=${cmd// run / install -f -n ${pkg} }
-    cmd=${cmd%\$@}
-    echo_blue "Installing ${pkg} ...">&2
-    eval "${cmd%\$@} 2>/dev/null"
+    # echo $pkg
+    cp "${DENOBREW_RELEASE}/${deno_target_version}/bin/${pkg}" $(dirname $(readlink -f $(which deno))) && echo_blue "Migrated ${pkg}"
+    # cmd=$(cat "${DENOBREW_RELEASE}/${deno_target_version}/bin/${pkg}" | grep -v "#" | tr -d "\"")
+    # cmd=${cmd// run / install -f -n ${pkg} }
+    # cmd=${cmd%\$@}
+    # echo_blue "Installing ${pkg} ...">&2
+    # eval "${cmd%\$@} 2>/dev/null"
   done
 }
 
@@ -251,16 +253,14 @@ if [ $# -eq 0 ]; then
   source /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/l3laze/sind/b47ba100afcaa7e44e3a11c8cd12cd25a4af412b/sind.sh)"
   subCmd=$(sind "line" "Choose sub-command:" ${SUBCOMMANDS[@]})
   echo "----"
-  if [[ " use uninstall migrate-package-from " =~ " ${subCmd} " ]]; then
-    echo "installed versions:"
-    denobrew-ls >&2
-    echo ""
-    read -p "version: " version
-  elif [ "${subCmd}" = "install" ]; then
-    echo "released versions:"
-    denobrew-ls-remote >&2
-    echo ""
-    read -p "version: " version
+  if [[ " use uninstall migrate-package-from install " =~ " ${subCmd} " ]]; then
+    isRemote=$(test "${subCmd}" == "install" && echo "-remote") || echo ""
+    versions=$(cat << EOS
+$(denobrew-ls"${isRemote}" --flat)
+EOS
+)
+    versions_array=($versions)
+    version=$(sind "line" "Choose version from:\n$(printf "%s\n" ${versions} | column)" "${versions_array[@]}" | sed -r "s/\x1B\[(([0-9]{1,2})?(;)?([0-9]{1,2})?)?[m,K,H,f,J]//g " )
   else
     version=""
   fi
